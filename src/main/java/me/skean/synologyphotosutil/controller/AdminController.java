@@ -37,35 +37,44 @@ public class AdminController {
         return ResponseEntity.ok(operation(path, true));
     }
 
-    private Res operation(String path, boolean doDelete) {
+    private Res operation(String path, boolean actualDelete) {
         Res res = new Res("", null, null);
-        Set<String> keepSet = new HashSet<>();
+        List<String> keepList = new ArrayList<>();
         List<String> deleteList = new ArrayList<>();
         File dir = new File(path);
         if (dir.exists()) {
             res.setMsg("执行成功");
             List<File> files = (List<File>) FileUtils.listFiles(dir, null, false);
             files.sort(Comparator.comparing(File::getName));
-            String tmpBaseName = UUID.randomUUID().toString();
-            String tmpFileExt = null;
+            String groupName = UUID.randomUUID().toString();
+            List<File> picGroups = new ArrayList<>();
+            List<File> movGroups = new ArrayList<>();
+            List<File> otherGroups = new ArrayList<>();
             for (File file : files) {
                 String fileName = file.getName();
                 String ext = FilenameUtils.getExtension(fileName).toLowerCase();
                 String baseName = FilenameUtils.getBaseName(file.getName());
-                if (fileName.startsWith(".") || fileName.length() < 10 || !(IMG_TYPES.contains(ext) || MOV_TYPES.contains(ext)))
+                //以点开头的文件或者名字太短的文件排除
+                if (fileName.startsWith(".") || fileName.length() < 12) {
                     continue;
-                if (baseName.startsWith(tmpBaseName) && isSameType(ext, tmpFileExt)) {
-                    if (doDelete) FileUtils.deleteQuietly(file);
-                    deleteList.add(file.getName());
-                    keepSet.add(tmpBaseName + "." + tmpFileExt);
+                }
+                if (baseName.startsWith(groupName)) { //同一组的, 进行判断分类
+                    putInGroup(file, ext, picGroups, movGroups, otherGroups);
                 } else {
-                    tmpBaseName = baseName;
-                    tmpFileExt = ext;
+                    //  当切换组的时候, 进行操作
+                    handle(deleteList, keepList, picGroups, movGroups, otherGroups, actualDelete);
+                    //清空缓存
+                    picGroups.clear();
+                    movGroups.clear();
+                    otherGroups.clear();
+                    //加进新的组
+                    groupName = baseName;
+                    putInGroup(file, ext, picGroups, movGroups, otherGroups);
                 }
             }
+            //最后一组的操作
+            handle(deleteList, keepList, picGroups, movGroups, otherGroups, actualDelete);
             res.setDeleteList(deleteList);
-            List<String> keepList = new ArrayList<>(keepSet);
-            keepList.sort(Comparator.naturalOrder());
             res.setKeepList(keepList);
         } else {
             res.setMsg("路径不存在");
@@ -73,7 +82,46 @@ public class AdminController {
         return res;
     }
 
-    private boolean isSameType(String extA, String extB) {
-        return (IMG_TYPES.contains(extA) && IMG_TYPES.contains(extB)) || (MOV_TYPES.contains(extA) && MOV_TYPES.contains(extB));
+    private void putInGroup(File file, String ext, List<File> picGroups, List<File> movGroups, List<File> otherGroups) {
+        if (IMG_TYPES.contains(ext)) {
+            picGroups.add(file);
+        } else if (MOV_TYPES.contains(ext)) {
+            movGroups.add(file);
+        } else {
+            otherGroups.add(file);
+        }
+    }
+
+    private void handle(List<String> deleteList, List<String> keepList, List<File> picGroups, List<File> movGroups,
+                        List<File> otherGroups, boolean actualDelete) {
+        if (picGroups.size() > 1 || movGroups.size() > 1) {
+            if (picGroups.size() > 1) {
+                for (int i = 0; i < picGroups.size(); i++) {
+                    if (i == 0) keepList.add(picGroups.get(i).getName());
+                    else {
+                        File file = picGroups.get(i);
+                        if (actualDelete) {
+                            FileUtils.deleteQuietly(file);
+                        }
+                        deleteList.add(file.getName());
+                    }
+                }
+            }
+            if (movGroups.size() > 1) {
+                for (int i = 0; i < movGroups.size(); i++) {
+                    if (i == 0) keepList.add(movGroups.get(i).getName());
+                    else {
+                        File file = movGroups.get(i);
+                        if (actualDelete) {
+                            FileUtils.deleteQuietly(file);
+                        }
+                        deleteList.add(file.getName());
+                    }
+                }
+            }
+            for (File other : otherGroups) {
+                keepList.add(other.getName());
+            }
+        }
     }
 }
