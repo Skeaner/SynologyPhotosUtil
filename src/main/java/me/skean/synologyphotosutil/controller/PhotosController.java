@@ -13,15 +13,15 @@ import java.util.*;
 
 @Api(tags = "图片管理工具")
 @RestController
-@RequestMapping("/admin")
-public class AdminController {
+@RequestMapping("/photos")
+public class PhotosController {
 
     private List<String> IMG_TYPES = Arrays.asList("jpg", "jpeg", "heic", "png");
     private List<String> MOV_TYPES = Arrays.asList("mov", "mpg", "mkv", "mp4");
 
     @GetMapping(value = "/queryDuplicate", produces = "application/json")
     @ApiOperation(value = "查询重复", produces = "application/json")
-    public ResponseEntity<Res> queryDuplicate(
+    public ResponseEntity<PhotosRes> queryDuplicate(
             @ApiParam("路径")
             @RequestParam
                     String path) {
@@ -30,15 +30,15 @@ public class AdminController {
 
     @GetMapping(value = "/deleteDuplicate", produces = "application/json")
     @ApiOperation(value = "删除重复", produces = "application/json")
-    public ResponseEntity<Res> deleteDuplicate(
+    public ResponseEntity<PhotosRes> deleteDuplicate(
             @ApiParam("路径")
             @RequestParam
                     String path) {
         return ResponseEntity.ok(operation(path, true));
     }
 
-    private Res operation(String path, boolean actualDelete) {
-        Res res = new Res("", null, null);
+    private PhotosRes operation(String path, boolean actualDelete) {
+        PhotosRes res = new PhotosRes("", null, null);
         List<String> keepList = new ArrayList<>();
         List<String> deleteList = new ArrayList<>();
         File dir = new File(path);
