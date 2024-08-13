@@ -1,7 +1,7 @@
 # 基础镜像
-FROM openjdk:11
+FROM openjdk:8-jre-alpine
 #作者信息   可以不写！！！
-MAINTAINER skean
+MAINTAINER skeaner
 #申明一个环境变量   可以不写！！！
 #ENV HOME_PATH /home
 #指定容器启动时，执行命令会在该目录下执行   可以不写！！！
