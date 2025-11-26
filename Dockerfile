@@ -1,5 +1,5 @@
 # 基础镜像
-FROM openjdk:8-jre-alpine
+FROM eclipse-temurin:17-jre-alpine-3.22
 #作者信息   可以不写！！！
 MAINTAINER skeaner
 #申明一个环境变量   可以不写！！！
